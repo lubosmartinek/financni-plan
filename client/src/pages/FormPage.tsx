@@ -430,7 +430,7 @@ function Step5({ form, set }: any) {
           ))}
         </div>
       </div>
-      <NumInput
+      <FormattedNumInput
         label="Výše nouzového fondu (finanční rezerva)"
         value={form.nouzovyFond}
         onChange={(v: any) => set("nouzovyFond", v)}
@@ -703,7 +703,7 @@ function Step6({ form, set }: any) {
         )}
       </div>
 
-      <NumInput
+      <FormattedNumInput
         label="Kolik měsíčně odkládáte / chcete odkládat"
         value={form.mesicniSporeni}
         onChange={(v: any) => set("mesicniSporeni", v)}
