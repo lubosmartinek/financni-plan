@@ -11,11 +11,12 @@ import {
   PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend
 } from "recharts";
 import { ArrowLeft, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info, RotateCcw, Target, Pencil } from "lucide-react";
+import { EmpariaHeader } from "@/components/emparia";
 
 const SCORE_COLORS = {
-  excellent: { bg: "bg-green-50 dark:bg-green-900/20", text: "text-green-700 dark:text-green-400", badge: "bg-green-100 text-green-800", ring: "#22c55e" },
-  good: { bg: "bg-blue-50 dark:bg-blue-900/20", text: "text-blue-700 dark:text-blue-400", badge: "bg-blue-100 text-blue-800", ring: "#3b82f6" },
-  fair: { bg: "bg-amber-50 dark:bg-amber-900/20", text: "text-amber-700 dark:text-amber-400", badge: "bg-amber-100 text-amber-800", ring: "#f59e0b" },
+  excellent: { bg: "bg-green-50", text: "text-green-700", badge: "bg-green-100 text-green-800", ring: "#4f5d37" },
+  good: { bg: "bg-green-50/60", text: "text-green-700", badge: "bg-green-50 text-green-800", ring: "#7a9450" },
+  fair: { bg: "bg-amber-50", text: "text-amber-700", badge: "bg-amber-100 text-amber-800", ring: "#C79549" },
   poor: { bg: "bg-red-50 dark:bg-red-900/20", text: "text-red-700 dark:text-red-400", badge: "bg-red-100 text-red-800", ring: "#ef4444" },
 };
 
@@ -224,7 +225,7 @@ export default function ResultPage() {
     { name: "Ostatní", value: data.ostatniVydaje || 0 },
   ].filter(d => d.value > 0);
 
-  const PIE_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ec4899", "#8b5cf6", "#64748b"];
+  const PIE_COLORS = ["#4f5d37", "#C79549", "#7a9450", "#a0856a", "#6b7a4a", "#9e8f7e"];
 
   // Bar chart – aktiva vs pasiva
   const bilanceData = [
@@ -282,36 +283,25 @@ export default function ResultPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-      {/* Header */}
-      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-border sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <svg viewBox="0 0 32 32" className="w-8 h-8 flex-shrink-0" fill="none">
-              <rect width="32" height="32" rx="8" fill="hsl(221 83% 53%)" />
-              <path d="M8 22 L12 16 L17 20 L22 10 L28 14" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              <circle cx="22" cy="10" r="2" fill="white"/>
-            </svg>
-            <div>
-              <h1 className="text-base font-semibold">Výsledky analýzy</h1>
-              <p className="text-xs text-muted-foreground">{data.jmeno}</p>
-            </div>
-          </div>
+    <div className="min-h-screen" style={{ backgroundColor: "#EAE2D9" }}>
+      <EmpariaHeader
+        subtitle={`Výsledky – ${data?.jmeno || ""}`}
+        rightContent={
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setLocation(`/?edit=${id}`)} className="gap-1.5" data-testid="button-edit">
+            <Button variant="outline" size="sm" onClick={() => setLocation(`/?edit=${id}`)} className="gap-1.5 border-primary/40 text-primary hover:bg-primary/10" data-testid="button-edit">
               <Pencil className="w-3.5 h-3.5" /> Upravit údaje
             </Button>
             <Button variant="outline" size="sm" onClick={() => setLocation("/")} className="gap-1.5" data-testid="button-new-analysis">
               <RotateCcw className="w-3.5 h-3.5" /> Nová analýza
             </Button>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <main className="max-w-4xl mx-auto px-6 py-8 space-y-6">
 
         {/* Hero score card */}
-        <Card className={`border-2 ${level === "excellent" ? "border-green-200" : level === "good" ? "border-blue-200" : level === "fair" ? "border-amber-200" : "border-red-200"}`}>
+        <Card className={`border-2 ${level === "excellent" || level === "good" ? "border-primary/30" : level === "fair" ? "border-amber-300" : "border-red-300"}`}>
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row items-center gap-6">
               <ScoreGauge score={totalScore} />
@@ -372,7 +362,7 @@ export default function ResultPage() {
               color: ((data.celkovyMajetek || 0) - (data.celkoveDluhy || 0)) >= 0 ? "text-green-600" : "text-red-600",
             },
           ].map(({ label, value, icon: Icon, color }) => (
-            <Card key={label} className="shadow-sm">
+            <Card key={label} className="shadow-sm bg-white/80">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div>
@@ -389,7 +379,7 @@ export default function ResultPage() {
         {/* Charts row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* Radar chart */}
-          <Card className="shadow-sm">
+          <Card className="shadow-sm bg-white/80">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold">Přehled oblastí</CardTitle>
             </CardHeader>
@@ -398,7 +388,7 @@ export default function ResultPage() {
                 <RadarChart data={radarData}>
                   <PolarGrid stroke="hsl(214 32% 91%)" />
                   <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
-                  <Radar name="Skóre" dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} strokeWidth={2} />
+                  <Radar name="Skóre" dataKey="A" stroke="#4f5d37" fill="#4f5d37" fillOpacity={0.15} strokeWidth={2} />
                 </RadarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -429,7 +419,7 @@ export default function ResultPage() {
 
         {/* Bilance bar chart */}
         {bilanceData.length > 0 && (
-          <Card className="shadow-sm">
+          <Card className="shadow-sm bg-white/80">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold">Aktiva vs. Pasiva (bilance majetku)</CardTitle>
             </CardHeader>
@@ -442,7 +432,7 @@ export default function ResultPage() {
                   <Tooltip formatter={(v: any) => CzFormat(Math.abs(Number(v)))} />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                     {bilanceData.map((entry, i) => (
-                      <Cell key={i} fill={entry.value >= 0 ? "#22c55e" : "#ef4444"} />
+                      <Cell key={i} fill={entry.value >= 0 ? "#4f5d37" : "#ef4444"} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -479,7 +469,7 @@ export default function ResultPage() {
         </Card>
 
         {/* Goal summary */}
-        <Card className="shadow-sm bg-gradient-to-r from-blue-600 to-blue-700 text-white border-0">
+        <Card className="shadow-sm border-0 text-white" style={{ background: "linear-gradient(135deg, #4f5d37 0%, #3d4a2a 100%)" }}>
           <CardContent className="p-5">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
@@ -487,21 +477,21 @@ export default function ResultPage() {
                 <h3 className="text-base font-bold mb-2">{cileLabels[data.hlavniCil] || data.hlavniCil}</h3>
                 <div className="space-y-1">
                   <p className="text-sm text-blue-100">
-                    <span className="text-blue-300 text-xs">Horizont:</span> {horizontDisplay}
+                    <span className="text-xs" style={{ color: "#C79549" }}>Horizont:</span> {horizontDisplay}
                   </p>
                   {data.cilMesicniDuchod > 0 && (
                     <p className="text-sm text-blue-100">
-                      <span className="text-blue-300 text-xs">Cílová částka:</span> <span className="font-semibold">{CzFormat(data.cilMesicniDuchod)}</span>/měs.
+                      <span className="text-xs" style={{ color: "#C79549" }}>Cílová částka:</span> <span className="font-semibold">{CzFormat(data.cilMesicniDuchod)}</span>/měs.
                     </p>
                   )}
                   {data.mesicniSporeni > 0 && (
                     <p className="text-sm text-blue-100">
-                      <span className="text-blue-300 text-xs">Odkládáte:</span> <span className="font-semibold">{CzFormat(data.mesicniSporeni)}</span>/měs.
+                      <span className="text-xs" style={{ color: "#C79549" }}>Odkládáte:</span> <span className="font-semibold">{CzFormat(data.mesicniSporeni)}</span>/měs.
                     </p>
                   )}
                   {projekce && (
                     <p className="text-sm text-blue-100">
-                      <span className="text-blue-300 text-xs">Nasporíš celkem (5% p.a.):</span>{" "}
+                      <span className="text-xs" style={{ color: "#C79549" }}>Naspoříš celkem (5% p.a.):</span>{" "}
                       <span className="font-bold text-white">{projekce >= 1000000 ? (projekce / 1000000).toFixed(1) + " mil. Kč" : Math.round(projekce / 1000) + "k Kč"}</span>
                     </p>
                   )}
@@ -511,7 +501,7 @@ export default function ResultPage() {
                 <Target className="w-7 h-7 text-blue-300 opacity-80" />
                 <button
                   onClick={() => setLocation(`/?edit=${id}`)}
-                  className="flex items-center gap-1 text-xs bg-white/20 hover:bg-white/30 transition-colors rounded px-2 py-1 text-white"
+                  className="flex items-center gap-1 text-xs rounded px-2 py-1 text-white transition-colors" style={{ backgroundColor: "rgba(199,149,73,0.3)" }}
                   data-testid="button-edit-goal"
                 >
                   <Pencil className="w-3 h-3" /> Upravit
@@ -522,7 +512,7 @@ export default function ResultPage() {
         </Card>
 
         <div className="flex justify-center gap-3 pb-8">
-          <Button variant="outline" onClick={() => setLocation(`/?edit=${id}`)} className="gap-2" data-testid="button-edit-bottom">
+          <Button variant="outline" onClick={() => setLocation(`/?edit=${id}`)} className="gap-2 border-primary/40 text-primary hover:bg-primary/10" data-testid="button-edit-bottom">
             <Pencil className="w-4 h-4" /> Upravit údaje
           </Button>
           <Button variant="outline" onClick={() => setLocation("/")} className="gap-2" data-testid="button-new-bottom">

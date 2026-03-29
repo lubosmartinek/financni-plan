@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { EmpariaHeader, FormattedNumInput } from "@/components/emparia";
 import { ChevronRight, ChevronLeft, CheckCircle2, User, TrendingUp, CreditCard, Shield, Target, Wallet } from "lucide-react";
 
 const STEPS = [
@@ -54,26 +55,6 @@ const defaultForm = {
   mesicniSporeni: "" as any,
 };
 
-function NumInput({ label, value, onChange, placeholder = "0", hint }: any) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-sm font-medium">{label}</Label>
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-      <div className="relative">
-        <Input
-          type="number"
-          min="0"
-          value={value === 0 ? "" : value}
-          onChange={e => onChange(e.target.value === "" ? 0 : Number(e.target.value))}
-          placeholder={placeholder}
-          className="pr-10"
-          data-testid={`input-${label}`}
-        />
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">Kč</span>
-      </div>
-    </div>
-  );
-}
 
 export default function FormPage() {
   const [step, setStep] = useState(1);
@@ -197,39 +178,21 @@ export default function FormPage() {
   // Actually let user navigate themselves – just show an edit banner
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-      {/* Header */}
-      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-border sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-3">
-          <svg viewBox="0 0 32 32" className="w-8 h-8 flex-shrink-0" aria-label="Logo" fill="none">
-            <rect width="32" height="32" rx="8" fill="hsl(221 83% 53%)" />
-            <path d="M8 22 L12 16 L17 20 L22 10 L28 14" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <circle cx="22" cy="10" r="2" fill="white"/>
-          </svg>
-          <div>
-            <h1 className="text-base font-semibold leading-tight">
-              {isEditMode ? "Úprava údajů" : "Analýza osobních financí"}
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              {isEditMode ? "Upravte hodnoty a přepočítejte výsledky" : "Zjistěte stav svých financí za 5 minut"}
-            </p>
-          </div>
-          {isEditMode && (
-            <button
-              onClick={() => setLocation(`/result/${editId}`)}
-              className="ml-auto text-xs text-muted-foreground hover:text-foreground underline"
-            >
-              ← Zpět na výsledky
-            </button>
-          )}
-        </div>
-      </header>
+    <div className="min-h-screen" style={{ backgroundColor: "#EAE2D9" }}>
+      <EmpariaHeader
+        subtitle={isEditMode ? "Úprava údajů" : "Analýza finančního plánu"}
+        rightContent={isEditMode ? (
+          <button onClick={() => setLocation(`/result/${editId}`)} className="text-xs text-muted-foreground hover:text-foreground underline">
+            ← Zpět na výsledky
+          </button>
+        ) : undefined}
+      />
 
       {/* Edit mode banner */}
       {isEditMode && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800">
+        <div className="border-b" style={{ backgroundColor: "#f5efe6", borderColor: "#C79549" }}>
           <div className="max-w-3xl mx-auto px-6 py-2 flex items-center gap-2">
-            <span className="text-xs text-amber-700 dark:text-amber-300">
+            <span className="text-xs" style={{ color: "#8a6520" }}>
               ✏️ Upravujete existující analýzu. Po dokončení se výsledky přepočítají.
             </span>
           </div>
@@ -270,7 +233,7 @@ export default function FormPage() {
         </div>
 
         {/* Step Cards */}
-        <Card className="shadow-sm border-border/60">
+        <Card className="shadow-sm border-border/40 bg-white/80">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">{STEPS[step - 1].label}</CardTitle>
             <CardDescription>{getStepDescription(step)}</CardDescription>
@@ -294,14 +257,14 @@ export default function FormPage() {
           ) : <div />}
 
           {step < 6 ? (
-            <Button onClick={() => setStep(s => s + 1)} disabled={!canNext()} className="gap-2" data-testid="button-next">
+            <Button onClick={() => setStep(s => s + 1)} disabled={!canNext()} className="gap-2" style={{ backgroundColor: "#4f5d37", color: "white" }} data-testid="button-next">
               Pokračovat <ChevronRight className="w-4 h-4" />
             </Button>
           ) : (
             <Button
               onClick={handleSubmit}
               disabled={isPending || !canNext()}
-              className="gap-2 bg-green-600 hover:bg-green-700"
+              className="gap-2" style={{ backgroundColor: "#C79549", color: "white" }}
               data-testid="button-submit"
             >
               {isPending
@@ -379,9 +342,9 @@ function Step1({ form, set }: any) {
 function Step2({ form, set }: any) {
   return (
     <div className="space-y-5">
-      <NumInput label="Čistý měsíční příjem" value={form.mesicniPrijem} onChange={(v: any) => set("mesicniPrijem", v)} placeholder="50 000" hint="Váš příjem po zdanění (mzda, odměny, podnikání...)" />
-      <NumInput label="Příjem partnera/partnerky" value={form.partnerPrijem} onChange={(v: any) => set("partnerPrijem", v)} hint="Pokud je relevantní, jinak nechte prázdné" />
-      <NumInput label="Ostatní příjmy" value={form.ostatniPrijmy} onChange={(v: any) => set("ostatniPrijmy", v)} hint="Pronájem, dividendy, podpora, jiné pasivní příjmy" />
+      <FormattedNumInput label="Čistý měsíční příjem" value={form.mesicniPrijem} onChange={(v: any) => set("mesicniPrijem", v)} placeholder="50 000" hint="Váš příjem po zdanění (mzda, odměny, podnikání...)" />
+      <FormattedNumInput label="Příjem partnera/partnerky" value={form.partnerPrijem} onChange={(v: any) => set("partnerPrijem", v)} hint="Pokud je relevantní, jinak nechte prázdné" />
+      <FormattedNumInput label="Ostatní příjmy" value={form.ostatniPrijmy} onChange={(v: any) => set("ostatniPrijmy", v)} hint="Pronájem, dividendy, podpora, jiné pasivní příjmy" />
       <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-100 dark:border-blue-800">
         <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
           Celkové příjmy domácnosti:{" "}
@@ -400,12 +363,12 @@ function Step3({ form, set }: any) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <NumInput label="Nájem / splátka hypotéky" value={form.najem} onChange={(v: any) => set("najem", v)} />
-        <NumInput label="Jídlo & nákupy" value={form.jidloNakupy} onChange={(v: any) => set("jidloNakupy", v)} />
-        <NumInput label="Doprava" value={form.doprava} onChange={(v: any) => set("doprava", v)} hint="MHD, auto, pohonné hmoty" />
-        <NumInput label="Zábava & volný čas" value={form.utraty} onChange={(v: any) => set("utraty", v)} hint="Restaurace, koníčky, výlety" />
-        <NumInput label="Pojistné" value={form.pojisteni} onChange={(v: any) => set("pojisteni", v)} hint="Všechny pojistky celkem" />
-        <NumInput label="Ostatní výdaje" value={form.ostatniVydaje} onChange={(v: any) => set("ostatniVydaje", v)} hint="Zdraví, oblečení, vzdělání..." />
+        <FormattedNumInput label="Nájem / splátka hypotéky" value={form.najem} onChange={(v: any) => set("najem", v)} />
+        <FormattedNumInput label="Jídlo & nákupy" value={form.jidloNakupy} onChange={(v: any) => set("jidloNakupy", v)} />
+        <FormattedNumInput label="Doprava" value={form.doprava} onChange={(v: any) => set("doprava", v)} hint="MHD, auto, pohonné hmoty" />
+        <FormattedNumInput label="Zábava & volný čas" value={form.utraty} onChange={(v: any) => set("utraty", v)} hint="Restaurace, koníčky, výlety" />
+        <FormattedNumInput label="Pojistné" value={form.pojisteni} onChange={(v: any) => set("pojisteni", v)} hint="Všechny pojistky celkem" />
+        <FormattedNumInput label="Ostatní výdaje" value={form.ostatniVydaje} onChange={(v: any) => set("ostatniVydaje", v)} hint="Zdraví, oblečení, vzdělání..." />
       </div>
       <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 border border-amber-100 dark:border-amber-800">
         <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">
@@ -424,9 +387,9 @@ function Step4({ form, set }: any) {
           <span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> Aktiva (co vlastníte)
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <NumInput label="Úspory a hotovost" value={form.uspory} onChange={(v: any) => set("uspory", v)} hint="Běžné a spořicí účty" />
-          <NumInput label="Investice" value={form.investice} onChange={(v: any) => set("investice", v)} hint="Akcie, fondy, krypto, penzijko" />
-          <NumInput label="Nemovitosti" value={form.nemovitosti} onChange={(v: any) => set("nemovitosti", v)} hint="Odhadní hodnota vlastněných nemovitostí" />
+          <FormattedNumInput label="Úspory a hotovost" value={form.uspory} onChange={(v: any) => set("uspory", v)} hint="Běžné a spořicí účty" />
+          <FormattedNumInput label="Investice" value={form.investice} onChange={(v: any) => set("investice", v)} hint="Akcie, fondy, krypto, penzijko" />
+          <FormattedNumInput label="Nemovitosti" value={form.nemovitosti} onChange={(v: any) => set("nemovitosti", v)} hint="Odhadní hodnota vlastněných nemovitostí" />
         </div>
       </div>
       <div>
@@ -434,10 +397,10 @@ function Step4({ form, set }: any) {
           <span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> Pasiva (co dlužíte)
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <NumInput label="Zbývající hypotéka" value={form.hypotekaDluh} onChange={(v: any) => set("hypotekaDluh", v)} />
-          <NumInput label="Spotřebitelský úvěr" value={form.spotrebitelskyUver} onChange={(v: any) => set("spotrebitelskyUver", v)} />
-          <NumInput label="Kreditní karty" value={form.kreditniKarty} onChange={(v: any) => set("kreditniKarty", v)} />
-          <NumInput label="Ostatní dluhy" value={form.ostatniDluhy} onChange={(v: any) => set("ostatniDluhy", v)} />
+          <FormattedNumInput label="Zbývající hypotéka" value={form.hypotekaDluh} onChange={(v: any) => set("hypotekaDluh", v)} />
+          <FormattedNumInput label="Spotřebitelský úvěr" value={form.spotrebitelskyUver} onChange={(v: any) => set("spotrebitelskyUver", v)} />
+          <FormattedNumInput label="Kreditní karty" value={form.kreditniKarty} onChange={(v: any) => set("kreditniKarty", v)} />
+          <FormattedNumInput label="Ostatní dluhy" value={form.ostatniDluhy} onChange={(v: any) => set("ostatniDluhy", v)} />
         </div>
       </div>
     </div>
