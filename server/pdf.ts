@@ -36,8 +36,9 @@ function pct(n: number, total: number): string {
   return Math.round((n / total) * 100) + " %";
 }
 
-// ── Logo path ────────────────────────────────────────────────
-// Logo is bundled in attached_assets (available at runtime)
+// ── Font paths ────────────────────────────────────────────────
+const FONT_R    = path.resolve(process.cwd(), "attached_assets", "NotoSans-Regular.ttf");
+const FONT_B    = path.resolve(process.cwd(), "attached_assets", "NotoSans-Bold.ttf");
 const LOGO_PATH = path.resolve(process.cwd(), "attached_assets", "emparia_logo.jpg");
 
 // ── Main generator ───────────────────────────────────────────
@@ -46,6 +47,10 @@ export function generatePDF(data: any, res: Response) {
     Title: `Analýza osobních financí – ${data.jmeno}`,
     Author: "Emparia Finance",
   }});
+
+  // Register Noto Sans fonts (full Czech/diacritics support)
+  doc.registerFont("NS",  FONT_R);
+  doc.registerFont("NSB", FONT_B);
 
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename="emparia-analyza-${data.jmeno?.replace(/\s+/g, "-") || "klient"}.pdf"`);
@@ -105,26 +110,28 @@ export function generatePDF(data: any, res: Response) {
 
   function sectionHeader(y: number, label: string, bg = OLIVE): number {
     rect(MG, y, CW, 18, bg, 3);
-    doc.save().font("Helvetica-Bold").fontSize(9).fillColor(WHITE)
+    doc.save().font("NSB").fontSize(9).fillColor(WHITE)
        .text(label, MG + 9, y + 5, { width: CW - 18 }).restore();
     return y + 22;
   }
 
   function scoreBar(x: number, y: number, w: number, label: string, v: number, mx: number) {
-    const barW = w - 70;
-    const barX = x + 68;
+    const labelW = 80;
+    const numW = 28;
+    const barW = w - labelW - numW - 6;
+    const barX = x + labelW + 2;
     doc.save()
-       .font("Helvetica").fontSize(7.5).fillColor(MUTED)
-       .text(label, x, y + 1, { width: 66 });
+       .font("NS").fontSize(7.5).fillColor(MUTED)
+       .text(label, x, y + 1, { width: labelW, lineBreak: false });
     // bg
     doc.roundedRect(barX, y, barW, 9, 2).fillColor(BORDER).fill();
     // fill
     if (v > 0) {
       doc.roundedRect(barX, y, barW * Math.min(v / mx, 1), 9, 2).fillColor(OLIVE).fill();
     }
-    // label
-    doc.font("Helvetica-Bold").fontSize(7.5).fillColor(TEXT)
-       .text(`${v}/${mx}`, barX + barW + 3, y + 1, { width: 30 });
+    // value
+    doc.font("NSB").fontSize(7.5).fillColor(TEXT)
+       .text(`${v}/${mx}`, barX + barW + 3, y + 1, { width: numW, lineBreak: false });
     doc.restore();
   }
 
@@ -133,17 +140,17 @@ export function generatePDF(data: any, res: Response) {
     rect(x, y, w, h, bg, 3);
     doc.save().strokeColor(BORDER).lineWidth(0.4)
        .roundedRect(x, y, w, h, 3).stroke().restore();
-    doc.save().font("Helvetica").fontSize(7).fillColor(MUTED)
+    doc.save().font("NS").fontSize(7).fillColor(MUTED)
        .text(label, x + 6, y + 6, { width: w - 12 }).restore();
-    doc.save().font("Helvetica-Bold").fontSize(9).fillColor(valColor)
+    doc.save().font("NSB").fontSize(9).fillColor(valColor)
        .text(val, x + 6, y + 19, { width: w - 12 }).restore();
   }
 
   function dataRow(x: number, y: number, w: number, label: string, val: string, odd: boolean) {
     if (odd) rect(x, y, w, 15, CREAM_LT, 0);
-    doc.save().font("Helvetica").fontSize(7.5).fillColor(MUTED)
+    doc.save().font("NS").fontSize(7.5).fillColor(MUTED)
        .text(label, x + 6, y + 3, { width: w * 0.54 }).restore();
-    doc.save().font("Helvetica-Bold").fontSize(8).fillColor(TEXT)
+    doc.save().font("NSB").fontSize(8).fillColor(TEXT)
        .text(val, x + w * 0.56, y + 3, { width: w * 0.4, align: "right" }).restore();
   }
 
@@ -156,9 +163,9 @@ export function generatePDF(data: any, res: Response) {
     const th = doc.heightOfString(text, { width: w - 26, fontSize: 8 });
     const h  = th + 12;
     rect(x, y, w, h, bg, 2);
-    doc.save().font("Helvetica-Bold").fontSize(8).fillColor(clr)
+    doc.save().font("NSB").fontSize(8).fillColor(clr)
        .text(icon, x + 6, y + 6, { width: 16 }).restore();
-    doc.save().font("Helvetica").fontSize(8).fillColor(clr)
+    doc.save().font("NS").fontSize(8).fillColor(clr)
        .text(text, x + 24, y + 6, { width: w - 30 }).restore();
     // Bottom border line
     doc.save().strokeColor(BORDER).lineWidth(0.3)
@@ -177,19 +184,19 @@ export function generatePDF(data: any, res: Response) {
   if (fs.existsSync(LOGO_PATH)) {
     doc.image(LOGO_PATH, MG, 8, { height: 26 });
   } else {
-    doc.save().font("Helvetica-Bold").fontSize(14).fillColor(OLIVE)
+    doc.save().font("NSB").fontSize(14).fillColor(OLIVE)
        .text("emparia", MG, 13).restore();
   }
-  doc.save().font("Helvetica").fontSize(7.5).fillColor(MUTED)
+  doc.save().font("NS").fontSize(7.5).fillColor(MUTED)
      .text(`Analýza ze dne ${datum}`, 0, 17, { align: "right", width: PW - MG }).restore();
   hrule(40, BORDER, 0.5);
   y = 52;
 
   // Title
-  doc.save().font("Helvetica-Bold").fontSize(18).fillColor(OLIVE)
+  doc.save().font("NSB").fontSize(18).fillColor(OLIVE)
      .text("Analýza osobních financí", MG, y).restore();
   y += 24;
-  doc.save().font("Helvetica").fontSize(8.5).fillColor(MUTED)
+  doc.save().font("NS").fontSize(8.5).fillColor(MUTED)
      .text(`${data.jmeno}  ·  věk ${data.vek} let  ·  ${data.rodinnyStav === "zenaty" ? "Ženatý/á" : data.rodinnyStav}  ·  ${data.pracovniStatus === "zamestnanec" ? "Zaměstnanec" : data.pracovniStatus}`, MG, y).restore();
   y += 10;
   hrule(y, BORDER, 0.5);
@@ -201,12 +208,12 @@ export function generatePDF(data: any, res: Response) {
   doc.save().strokeColor(BORDER).lineWidth(0.5).roundedRect(MG, y, CW, sbH, 4).stroke().restore();
 
   // Score number
-  doc.save().font("Helvetica-Bold").fontSize(34).fillColor(OLIVE)
-     .text(String(sc), MG + 8, y + 8, { width: 70, align: "center" }).restore();
-  doc.save().font("Helvetica").fontSize(8).fillColor(MUTED)
-     .text(`Finanční zdraví: ${scLbl}`, MG + 8, y + 46, { width: 70, align: "center" }).restore();
-  doc.save().font("Helvetica").fontSize(7).fillColor(MUTED)
-     .text("z 100 bodů", MG + 8, y + 57, { width: 70, align: "center" }).restore();
+  doc.save().font("NSB").fontSize(28).fillColor(OLIVE)
+     .text(String(sc), MG + 4, y + 7, { width: 78, align: "center" }).restore();
+  doc.save().font("NSB").fontSize(7.5).fillColor(MUTED)
+     .text(`Zdraví: ${scLbl}`, MG + 4, y + 42, { width: 78, align: "center" }).restore();
+  doc.save().font("NS").fontSize(7).fillColor(MUTED)
+     .text("z 100 bodů", MG + 4, y + 54, { width: 78, align: "center" }).restore();
 
   // Score bars
   const bx = MG + 86;
@@ -231,9 +238,9 @@ export function generatePDF(data: any, res: Response) {
 
   const colW = (CW - 6) / 2;
   // Headers
-  doc.save().font("Helvetica-Bold").fontSize(9).fillColor(OLIVE)
+  doc.save().font("NSB").fontSize(9).fillColor(OLIVE)
      .text("Příjmy", MG, y).restore();
-  doc.save().font("Helvetica-Bold").fontSize(9).fillColor(OLIVE)
+  doc.save().font("NSB").fontSize(9).fillColor(OLIVE)
      .text("Výdaje", MG + colW + 6, y).restore();
   y += 14;
 
@@ -260,9 +267,9 @@ export function generatePDF(data: any, res: Response) {
     if (pr[i]) {
       if (isLast || i === pr.length - 1) {
         rect(MG, y, colW, rowH, CREAM, 0);
-        doc.save().font("Helvetica-Bold").fontSize(7.5).fillColor(TEXT)
+        doc.save().font("NSB").fontSize(7.5).fillColor(TEXT)
            .text(pr[i][0], MG + 6, y + 3, { width: colW * 0.54 }).restore();
-        doc.save().font("Helvetica-Bold").fontSize(8).fillColor(TEXT)
+        doc.save().font("NSB").fontSize(8).fillColor(TEXT)
            .text(pr[i][1], MG + colW * 0.56, y + 3, { width: colW * 0.4, align: "right" }).restore();
       } else {
         dataRow(MG, y, colW, pr[i][0], pr[i][1], i % 2 === 0);
@@ -272,9 +279,9 @@ export function generatePDF(data: any, res: Response) {
       const isVdLast = i === vd.length - 1;
       if (isVdLast) {
         rect(MG + colW + 6, y, colW, rowH, CREAM, 0);
-        doc.save().font("Helvetica-Bold").fontSize(7.5).fillColor(TEXT)
+        doc.save().font("NSB").fontSize(7.5).fillColor(TEXT)
            .text(vd[i][0], MG + colW + 12, y + 3, { width: colW * 0.54 }).restore();
-        doc.save().font("Helvetica-Bold").fontSize(8).fillColor(TEXT)
+        doc.save().font("NSB").fontSize(8).fillColor(TEXT)
            .text(vd[i][1], MG + colW + 6 + colW * 0.56, y + 3, { width: colW * 0.4, align: "right" }).restore();
       } else {
         dataRow(MG + colW + 6, y, colW, vd[i][0], vd[i][1], i % 2 === 0);
@@ -289,7 +296,7 @@ export function generatePDF(data: any, res: Response) {
   // ── Majetek a dluhy ───────────────────────────────────────
   y = sectionHeader(y, "Majetek a dluhy", OLIVE2);
 
-  doc.save().font("Helvetica-Bold").fontSize(9).fillColor(OLIVE)
+  doc.save().font("NSB").fontSize(9).fillColor(OLIVE)
      .text("Aktiva", MG, y).text("Pasiva", MG + colW + 6, y).restore();
   y += 14;
 
@@ -312,10 +319,10 @@ export function generatePDF(data: any, res: Response) {
     if (isLast) {
       rect(MG, y, colW, rowH, CREAM, 0);
       rect(MG + colW + 6, y, colW, rowH, CREAM, 0);
-      doc.save().font("Helvetica-Bold").fontSize(7.5).fillColor(TEXT)
+      doc.save().font("NSB").fontSize(7.5).fillColor(TEXT)
          .text(ak[i][0], MG + 6, y + 3, { width: colW * 0.54 })
          .text(pa[i][0], MG + colW + 12, y + 3, { width: colW * 0.54 }).restore();
-      doc.save().font("Helvetica-Bold").fontSize(8).fillColor(TEXT)
+      doc.save().font("NSB").fontSize(8).fillColor(TEXT)
          .text(ak[i][1], MG + colW * 0.56, y + 3, { width: colW * 0.4, align: "right" })
          .text(pa[i][1], MG + colW + 6 + colW * 0.56, y + 3, { width: colW * 0.4, align: "right" }).restore();
     } else {
@@ -340,9 +347,9 @@ export function generatePDF(data: any, res: Response) {
   const pojW = CW / 4;
   pojItems.forEach(([label, val], i) => {
     const px = MG + i * pojW;
-    doc.save().font("Helvetica").fontSize(7).fillColor(MUTED)
+    doc.save().font("NS").fontSize(7).fillColor(MUTED)
        .text(label, px + 6, y + 6, { width: pojW - 8 }).restore();
-    doc.save().font("Helvetica-Bold").fontSize(8.5).fillColor(TEXT)
+    doc.save().font("NSB").fontSize(8.5).fillColor(TEXT)
        .text(val, px + 6, y + 17, { width: pojW - 8 }).restore();
     if (i < 3) hrule(0, BORDER, 0); // vertical lines
   });
@@ -376,13 +383,13 @@ export function generatePDF(data: any, res: Response) {
     const [l1, v1, l2, v2] = cilRows[i];
     const bg = i % 2 === 1 ? CREAM_LT : WHITE;
     rect(MG, y, CW, 16, bg, 0);
-    doc.save().font("Helvetica").fontSize(7.5).fillColor(MUTED)
+    doc.save().font("NS").fontSize(7.5).fillColor(MUTED)
        .text(l1, MG + 6, y + 4, { width: Q * 1.2 }).restore();
-    doc.save().font("Helvetica-Bold").fontSize(8.5).fillColor(TEXT)
+    doc.save().font("NSB").fontSize(8.5).fillColor(TEXT)
        .text(v1, MG + Q * 1.2 + 6, y + 3, { width: Q * 0.8 }).restore();
-    doc.save().font("Helvetica").fontSize(7.5).fillColor(MUTED)
+    doc.save().font("NS").fontSize(7.5).fillColor(MUTED)
        .text(l2, MG + Q * 2 + 6, y + 4, { width: Q * 1.2 }).restore();
-    doc.save().font("Helvetica-Bold").fontSize(8.5).fillColor(TEXT)
+    doc.save().font("NSB").fontSize(8.5).fillColor(TEXT)
        .text(v2, MG + Q * 3.2 + 6, y + 3, { width: Q * 0.8 }).restore();
     if (i < cilRows.length - 1) hrule(y + 16, BORDER, 0.3);
     y += 16;
@@ -399,7 +406,7 @@ export function generatePDF(data: any, res: Response) {
     if (fs.existsSync(LOGO_PATH)) {
       doc.image(LOGO_PATH, MG, 8, { height: 26 });
     }
-    doc.save().font("Helvetica").fontSize(7.5).fillColor(MUTED)
+    doc.save().font("NS").fontSize(7.5).fillColor(MUTED)
        .text(`Analýza ze dne ${datum}`, 0, 17, { align: "right", width: PW - MG }).restore();
     hrule(40, BORDER, 0.5);
     y = 52;
@@ -469,7 +476,7 @@ export function generatePDF(data: any, res: Response) {
   if (y > PH - 60) { doc.addPage(); y = 52; }
   hrule(y, BORDER, 0.4);
   y += 4;
-  doc.save().font("Helvetica").fontSize(7).fillColor(MUTED)
+  doc.save().font("NS").fontSize(7).fillColor(MUTED)
      .text(
        "Tento dokument byl vygenerován na základě údajů zadaných klientem a slouží jako orientační podklad pro finanční poradenství. " +
        "Nepředstavuje investiční doporučení ani daňové poradenství. Projekce vycházejí z předpokladu průměrné inflace 2 % p.a. a výnosu 5 % p.a. " +
@@ -482,7 +489,7 @@ export function generatePDF(data: any, res: Response) {
   for (let p = 0; p < doc.bufferedPageRange().count; p++) {
     doc.switchToPage(p);
     hrule(PH - 24, BORDER, 0.4);
-    doc.save().font("Helvetica").fontSize(7).fillColor(MUTED)
+    doc.save().font("NS").fontSize(7).fillColor(MUTED)
        .text("emparia.cz  ·  Dokument je důvěrný a určen výhradně pro klienta.", MG, PH - 18, { width: CW * 0.7 })
        .text(`Strana ${p + 1}`, MG, PH - 18, { width: CW, align: "right" })
        .restore();
