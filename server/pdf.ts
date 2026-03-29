@@ -53,7 +53,12 @@ export function generatePDF(data: any, res: Response) {
   doc.registerFont("NSB", FONT_B);
 
   res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `attachment; filename="emparia-analyza-${data.jmeno?.replace(/\s+/g, "-") || "klient"}.pdf"`);
+  // HTTP headers nesmi obsahovat diakritiku - pouzij bezpecny ASCII nazev
+  const safeName = (data.jmeno || "klient")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // odstranit diakritiku
+    .replace(/[^a-zA-Z0-9]/g, "-")                    // nahradit non-ASCII pomlckou
+    .replace(/-+/g, "-").replace(/^-|-$/g, "");        // zkratit vicenasobne pomlcky
+  res.setHeader("Content-Disposition", `attachment; filename="emparia-analyza-${safeName}.pdf"`);
   doc.pipe(res);
 
   const PW  = doc.page.width;
