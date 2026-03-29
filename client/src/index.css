@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 /* ==========================================
    EMPARIA FINANCE – Design System
@@ -24,28 +24,28 @@
     --accent:         36 47% 53%;   /* #C79549 */
     --accent-foreground: 0 0% 100%;
 
-    /* Krémové pozadí */
-    --background:     33 24% 88%;   /* #EAE2D9 */
+    /* Bílé pozadí */
+    --background:     0 0% 98%;     /* téměř čistá bílá */
     --foreground:     97 10% 18%;   /* tmavě olivová pro text */
 
-    /* Karty – světlejší krémová / bílá */
+    /* Karty */
     --card:           0 0% 100%;
     --card-foreground: 97 10% 18%;
 
     --popover:        0 0% 100%;
     --popover-foreground: 97 10% 18%;
 
-    --secondary:      33 20% 82%;
+    --secondary:      0 0% 94%;
     --secondary-foreground: 97 10% 18%;
 
-    --muted:          33 18% 84%;
-    --muted-foreground: 97 8% 42%;
+    --muted:          0 0% 94%;
+    --muted-foreground: 97 8% 48%;
 
     --destructive:    0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border:         33 18% 78%;
-    --input:          33 18% 78%;
+    --border:         0 0% 88%;
+    --input:          0 0% 88%;
     --ring:           97 26% 28%;
 
     --radius: 0.5rem;

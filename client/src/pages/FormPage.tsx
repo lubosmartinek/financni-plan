@@ -178,7 +178,7 @@ export default function FormPage() {
   // Actually let user navigate themselves – just show an edit banner
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#EAE2D9" }}>
+    <div className="min-h-screen">
       <EmpariaHeader
         subtitle={isEditMode ? "Úprava údajů" : "Analýza finančního plánu"}
         rightContent={isEditMode ? (
@@ -190,7 +190,7 @@ export default function FormPage() {
 
       {/* Edit mode banner */}
       {isEditMode && (
-        <div className="border-b" style={{ backgroundColor: "#f5efe6", borderColor: "#C79549" }}>
+        <div className="border-b bg-amber-50" style={{ borderColor: "#C79549" }}>
           <div className="max-w-3xl mx-auto px-6 py-2 flex items-center gap-2">
             <span className="text-xs" style={{ color: "#8a6520" }}>
               ✏️ Upravujete existující analýzu. Po dokončení se výsledky přepočítají.

@@ -2,55 +2,21 @@
  * Sdílené Emparia komponenty
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Label } from "@/components/ui/label";
+import logoSrc from "@assets/emparia_logo.jpg";
 
 // ============================================================
-// Logo SVG – přesně z logomanuálu
+// Logo – originální obrázek z logomanuálu
 // ============================================================
 export function EmpariaLogo({ className = "h-8" }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 240 52"
+    <img
+      src={logoSrc}
+      alt="emparia finance"
       className={className}
-      aria-label="emparia finance"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Symbol – čtyřlístek ze sign manuálu */}
-      <g transform="translate(1, 3) scale(0.85)">
-        <ellipse cx="12" cy="7"  rx="5" ry="7"   fill="#4f5d37" transform="rotate(-18 12 7)" />
-        <ellipse cx="23" cy="5"  rx="5" ry="7"   fill="#4f5d37" transform="rotate(18 23 5)" />
-        <ellipse cx="7"  cy="19" rx="5" ry="7"   fill="#4f5d37" transform="rotate(-48 7 19)" />
-        <ellipse cx="19" cy="21" rx="4.5" ry="6.5" fill="#4f5d37" transform="rotate(18 19 21)" />
-      </g>
-
-      {/* "emparia" */}
-      <text
-        x="34" y="33"
-        fontFamily="Outfit, sans-serif"
-        fontWeight="400"
-        fontSize="26"
-        fill="#4f5d37"
-      >
-        emparia
-      </text>
-
-      {/* svislá čára */}
-      <line x1="158" y1="14" x2="158" y2="38" stroke="#C79549" strokeWidth="1.2" />
-
-      {/* "FINANCE" */}
-      <text
-        x="163" y="33"
-        fontFamily="Outfit, sans-serif"
-        fontWeight="500"
-        fontSize="10"
-        fill="#C79549"
-        letterSpacing="1.8"
-      >
-        FINANCE
-      </text>
-    </svg>
+      style={{ objectFit: "contain" }}
+    />
   );
 }
 
@@ -153,12 +119,12 @@ interface EmpariaHeaderProps {
 
 export function EmpariaHeader({ subtitle, rightContent }: EmpariaHeaderProps) {
   return (
-    <header className="bg-white/90 backdrop-blur border-b border-border sticky top-0 z-10 shadow-sm">
-      <div className="max-w-3xl mx-auto px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <EmpariaLogo className="h-9" />
+    <header className="bg-white border-b border-border sticky top-0 z-10" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+      <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <EmpariaLogo className="h-10" />
           {subtitle && (
-            <span className="text-xs text-muted-foreground hidden sm:block border-l border-border pl-3">
+            <span className="text-xs text-muted-foreground hidden sm:block border-l border-border pl-4">
               {subtitle}
             </span>
           )}

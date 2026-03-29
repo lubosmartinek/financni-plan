@@ -283,7 +283,7 @@ export default function ResultPage() {
     : null;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#EAE2D9" }}>
+    <div className="min-h-screen">
       <EmpariaHeader
         subtitle={`Výsledky – ${data?.jmeno || ""}`}
         rightContent={
