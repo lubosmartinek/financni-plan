@@ -10,7 +10,7 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend
 } from "recharts";
-import { ArrowLeft, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info, RotateCcw, Target, Pencil } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info, RotateCcw, Target, Pencil, Download } from "lucide-react";
 import { EmpariaHeader } from "@/components/emparia";
 
 const SCORE_COLORS = {
@@ -288,6 +288,15 @@ export default function ResultPage() {
         subtitle={`Výsledky – ${data?.jmeno || ""}`}
         rightContent={
           <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              className="gap-1.5 text-white"
+              style={{ backgroundColor: "#C79549" }}
+              onClick={() => window.open(`./api/assessments/${id}/pdf`, "_blank")}
+              data-testid="button-download-pdf"
+            >
+              <Download className="w-3.5 h-3.5" /> Stáhnout PDF
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setLocation(`/?edit=${id}`)} className="gap-1.5 border-primary/40 text-primary hover:bg-primary/10" data-testid="button-edit">
               <Pencil className="w-3.5 h-3.5" /> Upravit údaje
             </Button>
@@ -511,7 +520,15 @@ export default function ResultPage() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-center gap-3 pb-8">
+        <div className="flex justify-center gap-3 pb-8 flex-wrap">
+          <Button
+            className="gap-2 text-white"
+            style={{ backgroundColor: "#C79549" }}
+            onClick={() => window.open(`./api/assessments/${id}/pdf`, "_blank")}
+            data-testid="button-download-bottom"
+          >
+            <Download className="w-4 h-4" /> Stáhnout PDF
+          </Button>
           <Button variant="outline" onClick={() => setLocation(`/?edit=${id}`)} className="gap-2 border-primary/40 text-primary hover:bg-primary/10" data-testid="button-edit-bottom">
             <Pencil className="w-4 h-4" /> Upravit údaje
           </Button>

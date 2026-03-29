@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
 import { insertAssessmentSchema } from "@shared/schema";
+import { generatePDF } from "./pdf";
 
 // Scoring logic
 function computeScores(data: any) {
@@ -126,6 +127,19 @@ export function registerRoutes(httpServer: any, app: Express) {
   app.get("/api/assessments", (req, res) => {
     const all = storage.getAllAssessments();
     res.json(all);
+  });
+
+  // PDF export
+  app.get("/api/assessments/:id/pdf", (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const record = storage.getAssessment(id);
+      if (!record) return res.status(404).json({ error: "Not found" });
+      const scores = computeScores(record);
+      generatePDF({ ...record, ...scores }, res);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // PATCH – update existing assessment (for "edit" flow)
