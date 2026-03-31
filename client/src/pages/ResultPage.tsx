@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -12,6 +13,7 @@ import {
 } from "recharts";
 import { ArrowLeft, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info, RotateCcw, Target, Pencil, Download } from "lucide-react";
 import { EmpariaHeader } from "@/components/emparia";
+import { session } from "@/lib/session";
 
 const SCORE_COLORS = {
   excellent: { bg: "bg-green-50", text: "text-green-700", badge: "bg-green-100 text-green-800", ring: "#4f5d37" },
@@ -167,14 +169,77 @@ function getRecommendations(data: any): Array<{ type: "warning" | "tip" | "ok", 
   return recs;
 }
 
+
+// ── Session timer ──────────────────────────────────────────
+function SessionTimer({ id, onExpired }: { id: string; onExpired: () => void }) {
+  const [seconds, setSeconds] = useState<number | null>(null);
+  const [warning, setWarning] = useState(false);
+
+  const fetchTTL = useCallback(async () => {
+    try {
+      const token = session.getToken();
+      if (!token) return;
+      const res = await fetch(`./api/assessments/${id}/ttl?token=${encodeURIComponent(token)}`);
+      const data = await res.json();
+      if (data.expired) {
+        session.clear();
+        onExpired();
+      } else {
+        setSeconds(data.seconds);
+        setWarning(data.seconds <= 60);
+      }
+    } catch {
+      // síťová chyba – ignoruj
+    }
+  }, [id, onExpired]);
+
+  useEffect(() => {
+    fetchTTL();
+    const interval = setInterval(fetchTTL, 15_000); // poll každých 15s
+    return () => clearInterval(interval);
+  }, [fetchTTL]);
+
+  // Lokální odpočet mezi pollingy
+  useEffect(() => {
+    if (seconds === null) return;
+    const t = setInterval(() => setSeconds(s => {
+      if (s === null || s <= 1) return s;
+      return s - 1;
+    }), 1000);
+    return () => clearInterval(t);
+  }, [seconds]);
+
+  if (seconds === null) return null;
+
+  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+  if (!warning) return null; // nezobrazovat dokud není varování
+
+  return (
+    <div className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-full shadow-lg text-sm font-medium transition-all ${
+      seconds <= 30
+        ? "bg-red-600 text-white"
+        : "bg-amber-500 text-white"
+    }`}>
+      <span className="text-base">⏱</span>
+      <span>
+        {seconds <= 30
+          ? `Data se smažou za ${fmt(seconds)} — uložte si PDF!`
+          : `Relace vyprší za ${fmt(seconds)}`}
+      </span>
+    </div>
+  );
+}
+
 export default function ResultPage() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
+  const handleExpired = useCallback(() => setLocation("/"), [setLocation]);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["/api/assessments", id],
     queryFn: async () => {
-      const res = await apiRequest("GET", `/api/assessments/${id}`);
+      const res = await apiRequest("GET", session.withToken(`/api/assessments/${id}`));
       return res.json();
     },
     // Always re-fetch on mount so edits are immediately reflected
@@ -284,6 +349,7 @@ export default function ResultPage() {
 
   return (
     <div className="min-h-screen">
+      <SessionTimer id={id!} onExpired={handleExpired} />
       <EmpariaHeader
         subtitle={`Výsledky – ${data?.jmeno || ""}`}
         rightContent={
@@ -292,7 +358,7 @@ export default function ResultPage() {
               size="sm"
               className="gap-1.5 text-white"
               style={{ backgroundColor: "#C79549" }}
-              onClick={() => window.open(`./api/assessments/${id}/pdf`, "_blank")}
+              onClick={() => window.open(session.withToken(`./api/assessments/${id}/pdf`), "_blank")}
               data-testid="button-download-pdf"
             >
               <Download className="w-3.5 h-3.5" /> Stáhnout PDF
@@ -524,7 +590,7 @@ export default function ResultPage() {
           <Button
             className="gap-2 text-white"
             style={{ backgroundColor: "#C79549" }}
-            onClick={() => window.open(`./api/assessments/${id}/pdf`, "_blank")}
+            onClick={() => window.open(session.withToken(`./api/assessments/${id}/pdf`), "_blank")}
             data-testid="button-download-bottom"
           >
             <Download className="w-4 h-4" /> Stáhnout PDF

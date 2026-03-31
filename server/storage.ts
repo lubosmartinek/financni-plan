@@ -1,54 +1,34 @@
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import Database from "better-sqlite3";
-import { assessments, type Assessment, type InsertAssessment } from "@shared/schema";
-import { eq } from "drizzle-orm";
+/**
+ * In-memory storage — žádná data se neukládají na disk.
+ * Každý záznam má krátkou životnost: smaže se automaticky
+ * po přístupu k výsledkům nebo nejpozději po 2 hodinách.
+ */
+import type { Assessment, InsertAssessment } from "@shared/schema";
 
-const sqlite = new Database("db.sqlite");
-export const db = drizzle(sqlite);
+const TTL_MS = 5 * 60 * 1000; // 5 minut od posledni aktivity
 
-// Create tables
-sqlite.exec(`
-  CREATE TABLE IF NOT EXISTS assessments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    created_at TEXT NOT NULL,
-    jmeno TEXT NOT NULL,
-    vek INTEGER NOT NULL,
-    rodinny_stav TEXT NOT NULL,
-    pocet_deti INTEGER NOT NULL DEFAULT 0,
-    pracovni_status TEXT NOT NULL,
-    mesicni_prijem REAL NOT NULL,
-    partner_prijem REAL NOT NULL DEFAULT 0,
-    ostatni_prijmy REAL NOT NULL DEFAULT 0,
-    najem REAL NOT NULL DEFAULT 0,
-    jidlo_nakupy REAL NOT NULL DEFAULT 0,
-    doprava REAL NOT NULL DEFAULT 0,
-    utraty REAL NOT NULL DEFAULT 0,
-    pojisteni REAL NOT NULL DEFAULT 0,
-    ostatni_vydaje REAL NOT NULL DEFAULT 0,
-    uspory REAL NOT NULL DEFAULT 0,
-    investice REAL NOT NULL DEFAULT 0,
-    nemovitosti REAL NOT NULL DEFAULT 0,
-    hypoteka_dluh REAL NOT NULL DEFAULT 0,
-    spotrebitelsky_uver REAL NOT NULL DEFAULT 0,
-    kreditni_karty REAL NOT NULL DEFAULT 0,
-    ostatni_dluhy REAL NOT NULL DEFAULT 0,
-    zivotni_pojisteni INTEGER NOT NULL DEFAULT 0,
-    nemocenske_poistenie INTEGER NOT NULL DEFAULT 0,
-    majetek_pojisteni INTEGER NOT NULL DEFAULT 0,
-    nouzovy_fond REAL NOT NULL DEFAULT 0,
-    hlavni_cil TEXT NOT NULL DEFAULT '',
-    casovy_horizont TEXT NOT NULL DEFAULT '',
-    cil_vek INTEGER DEFAULT 0,
-    cil_roky INTEGER DEFAULT 0,
-    cil_mesicni_duchod REAL DEFAULT 0,
-    mesicni_sporeni REAL NOT NULL DEFAULT 0,
-    skore_rodinne_finance REAL,
-    skore_zadluzenost REAL,
-    skore_rezervy_ochrana REAL,
-    skore_sporeni_investice REAL,
-    skore_financni_zdrav REAL
-  )
-`);
+interface StoredRecord {
+  data: Assessment;
+  expiresAt: number;
+  accessToken: string; // jednorázový token vygenerovaný při vytvoření
+}
+
+const store = new Map<number, StoredRecord>();
+let nextId = 1;
+
+// Periodicky čistí expirované záznamy
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, rec] of store.entries()) {
+    if (rec.expiresAt < now) {
+      store.delete(id);
+    }
+  }
+}, 10 * 60 * 1000); // každých 10 minut
+
+function generateToken(): string {
+  return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+}
 
 export type AssessmentWithScores = InsertAssessment & {
   skoreRodinneFinance: number;
@@ -58,32 +38,72 @@ export type AssessmentWithScores = InsertAssessment & {
   skoreFinancniZdrav: number;
 };
 
-export interface IStorage {
-  createAssessment(data: InsertAssessment & {
-    createdAt: string;
-    skoreRodinneFinance: number;
-    skoreZadluzenost: number;
-    skoreRezervyOchrana: number;
-    skoreSporeníInvestice: number;
-    skoreFinancniZdrav: number;
-  }): Assessment;
-  getAssessment(id: number): Assessment | undefined;
-  getAllAssessments(): Assessment[];
-  updateAssessment(id: number, data: AssessmentWithScores): Assessment;
-}
+export const storage = {
+  /**
+   * Uloží záznam do paměti. Vrátí record + accessToken.
+   * Token je potřeba pro přístup k výsledkům.
+   */
+  createAssessment(data: AssessmentWithScores & { createdAt: string }): { record: Assessment; accessToken: string } {
+    const id = nextId++;
+    const record: Assessment = { id, ...data } as Assessment;
+    const accessToken = generateToken();
+    store.set(id, {
+      data: record,
+      expiresAt: Date.now() + TTL_MS,
+      accessToken,
+    });
+    return { record, accessToken };
+  },
 
-export const storage: IStorage = {
-  createAssessment(data) {
-    return db.insert(assessments).values(data).returning().get();
+  /**
+   * Vrátí záznam POUZE pokud token odpovídá.
+   * Přístup bez tokenu vrátí null.
+   */
+  getAssessment(id: number, accessToken: string): Assessment | null {
+    const entry = store.get(id);
+    if (!entry) return null;
+    if (entry.accessToken !== accessToken) return null;
+    if (entry.expiresAt < Date.now()) {
+      store.delete(id);
+      return null;
+    }
+    // Reset TTL při každém přístupu (sliding window)
+    entry.expiresAt = Date.now() + TTL_MS;
+    return entry.data;
   },
-  getAssessment(id) {
-    return db.select().from(assessments).where(eq(assessments.id, id)).get();
+
+  /**
+   * Smaže záznam okamžitě (voláno po stažení PDF nebo explicitně).
+   * Token musí souhlasit.
+   */
+  deleteAssessment(id: number, accessToken: string): boolean {
+    const entry = store.get(id);
+    if (!entry || entry.accessToken !== accessToken) return false;
+    store.delete(id);
+    return true;
   },
-  getAllAssessments() {
-    return db.select().from(assessments).all();
+
+  /**
+   * Aktualizuje záznam (edit flow). Token musí souhlasit.
+   */
+  updateAssessment(id: number, accessToken: string, data: AssessmentWithScores): Assessment | null {
+    const entry = store.get(id);
+    if (!entry || entry.accessToken !== accessToken) return null;
+    if (entry.expiresAt < Date.now()) {
+      store.delete(id);
+      return null;
+    }
+    const updated: Assessment = { id, createdAt: entry.data.createdAt, ...data } as Assessment;
+    // Reset TTL při každé úpravě
+    store.set(id, { ...entry, data: updated, expiresAt: Date.now() + TTL_MS });
+    return updated;
   },
-  updateAssessment(id, data) {
-    const { ...rest } = data;
-    return db.update(assessments).set(rest).where(eq(assessments.id, id)).returning().get();
+
+  /** Vrátí zbývající sekundy platnosti (pro frontend countdown) */
+  getRemainingSeconds(id: number, accessToken: string): number | null {
+    const entry = store.get(id);
+    if (!entry || entry.accessToken !== accessToken) return null;
+    const remaining = entry.expiresAt - Date.now();
+    return remaining > 0 ? Math.ceil(remaining / 1000) : null;
   },
 };

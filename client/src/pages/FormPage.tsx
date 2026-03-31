@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { session } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,7 +72,7 @@ export default function FormPage() {
   const { data: existingData } = useQuery({
     queryKey: ["/api/assessments", editId],
     queryFn: async () => {
-      const res = await apiRequest("GET", `/api/assessments/${editId}`);
+      const res = await apiRequest("GET", session.withToken(`/api/assessments/${editId}`));
       return res.json();
     },
     enabled: !!editId,
@@ -121,13 +122,16 @@ export default function FormPage() {
       const res = await apiRequest("POST", "/api/assessments", data);
       return res.json();
     },
-    onSuccess: (data) => setLocation(`/result/${data.id}`),
+    onSuccess: (data) => {
+      session.setToken(data.id, data.accessToken);
+      setLocation(`/result/${data.id}`);
+    },
     onError: () => toast({ title: "Chyba", description: "Nepodařilo se uložit data.", variant: "destructive" }),
   });
 
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("PATCH", `/api/assessments/${editId}`, data);
+      const res = await apiRequest("PATCH", session.withToken(`/api/assessments/${editId}`), data);
       return res.json();
     },
     onSuccess: () => {
