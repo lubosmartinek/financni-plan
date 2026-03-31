@@ -236,16 +236,45 @@ export default function ResultPage() {
   const [, setLocation] = useLocation();
   const handleExpired = useCallback(() => setLocation("/"), [setLocation]);
 
+  // Token musí být k dispozici -- bez něj server vrátí 403
+  const token = session.getToken();
+  const hasToken = !!token;
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["/api/assessments", id],
+    queryKey: ["/api/assessments", id, token], // token v klici zajisti refetch po jeho nastaveni
     queryFn: async () => {
       const res = await apiRequest("GET", session.withToken(`/api/assessments/${id}`));
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
       return res.json();
     },
-    // Always re-fetch on mount so edits are immediately reflected
     staleTime: 0,
     refetchOnMount: true,
+    enabled: hasToken, // nespouštěčej dokud token není v paměti
+    retry: false,
   });
+
+  // Token chybí -- uvádí to na to, že stránka byla načtena znovu (reload/bookmark)
+  if (!hasToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#FAF8F5" }}>
+        <div className="text-center space-y-4 max-w-sm px-6">
+          <p className="text-2xl">&#128274;</p>
+          <p className="font-semibold text-lg" style={{ color: "#4f5d37" }}>Relace vypršela</p>
+          <p className="text-sm text-muted-foreground">Z bezpečnostních důvodů se výsledky nezachávají. Vyplňte formulář znovu.</p>
+          <button
+            onClick={() => window.location.href = window.location.origin + window.location.pathname}
+            className="mt-4 px-6 py-2 rounded-lg text-white text-sm font-medium"
+            style={{ backgroundColor: "#4f5d37" }}
+          >
+            Nová analýza
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
